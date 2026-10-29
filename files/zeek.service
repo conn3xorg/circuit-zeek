@@ -1,0 +1,19 @@
+[Unit]
+Description=Zeek network security monitor
+Documentation=https://docs.zeek.org/en/current/quickstart.html
+Wants=network-online.target
+After=network-online.target
+
+# zeekctl starts Zeek in the background and returns, so the unit stays
+# active after it exits, and Zeek runs in the unit's control group. zeekctl
+# start runs the configuration last installed with zeekctl install, never
+# files edited since.
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/zeek/bin/zeekctl start
+ExecStop=/opt/zeek/bin/zeekctl stop
+TimeoutStartSec=2min
+
+[Install]
+WantedBy=multi-user.target

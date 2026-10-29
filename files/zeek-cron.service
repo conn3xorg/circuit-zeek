@@ -1,0 +1,11 @@
+[Unit]
+Description=Zeek housekeeping (zeekctl cron)
+Documentation=https://docs.zeek.org/projects/zeekctl/en/current/
+After=zeek.service
+
+# zeekctl cron restarts Zeek if it crashed. KillMode=process lets that
+# restarted Zeek outlive this oneshot unit instead of being killed with it.
+[Service]
+Type=oneshot
+ExecStart=/opt/zeek/bin/zeekctl cron
+KillMode=process
