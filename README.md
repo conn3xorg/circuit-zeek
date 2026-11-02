@@ -1,5 +1,7 @@
 # circuit-zeek
 
+[![Conn3x grade](https://conn3x.org/circuits/zeek/grade.svg)](https://conn3x.org/circuits/zeek/grade)
+
 A Conn3x circuit that installs the Zeek network security monitor from Zeek's own packages and runs it as a standalone sensor on one interface. Zeek watches the traffic going past and writes down what happened: every connection in `conn.log`, every DNS question and answer in `dns.log`, every HTTP request in `http.log`, the certificates, the software versions, the odd things. When something on your network starts talking to somewhere it shouldn't, those logs are how you find out what, when and to whom.
 
 Setting Zeek up by hand means a repository and its key, three config files under `/opt/zeek/etc`, a choice of log format, a crontab line and something to start it at boot. This circuit does all of that from a handful of inputs, turns JSON logs on so they go straight into whatever you search logs with, and checks every change with `zeekctl check` before the running Zeek sees it.
