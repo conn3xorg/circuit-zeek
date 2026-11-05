@@ -12,7 +12,7 @@ It runs on Ubuntu 24.04 and Debian 13. Zeek doesn't build packages for Rocky Lin
 
 ```hcl
 module "zeek" {
-  source = "github.com/conn3xorg/circuit-zeek?ref=v0.1.1"
+  source = "github.com/conn3xorg/circuit-zeek?ref=v0.1.2"
 
   hosts                = { sensor1 = "203.0.113.10" }
   ssh_private_key_file = "~/.ssh/id_ed25519"
@@ -130,7 +130,7 @@ After an `apt upgrade` brings a new Zeek, `zeekctl status` says `new zeek versio
 | --- | --- | --- |
 | Ubuntu 24.04 | Yes | `xUbuntu_24.04`, amd64 and arm64. |
 | Debian 13 | Yes | `Debian_13`, amd64 and arm64. |
-| Rocky Linux 10 | No | Zeek's repositories have no Enterprise Linux builds, for Rocky Linux, AlmaLinux, RHEL or CentOS. |
+| Rocky Linux 10 | No | Zeek's repositories have no Enterprise Linux builds, for Rocky Linux, AlmaLinux or RHEL. |
 | Fedora 45 | No | Zeek's repositories have Fedora 43, 44 and Rawhide, and no Fedora 45 yet, as of 29 October 2026. |
 
 The circuit stops at plan time on any other distribution, with a message saying so.
