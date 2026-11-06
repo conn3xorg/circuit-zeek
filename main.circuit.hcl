@@ -42,6 +42,15 @@ locals {
 
   zeekctl = "/opt/zeek/bin/zeekctl"
 
+  # Installed packages from a Zeek release line other than zeek_series,
+  # such as zeek-8.0-core and zeekctl-8.0 when the series is 9.0. Each
+  # line installs into /opt/zeek and they don't conflict with each other
+  # in dpkg, so the old one has to go before the new one can install.
+  other_series = join(" ", [
+    "dpkg-query -W -f '$${Package} $${db:Status-Abbrev}\\n'",
+    "| awk -v s=${var.zeek_series} '$2 ~ /^ii/ && $1 ~ /^(zeek|zeekctl|libbroker)-/ && match($1, /-[0-9]+[.][0-9]+(-|$)/) { v = substr($1, RSTART + 1, RLENGTH - 1); sub(/-$/, \"\", v); if (v != s) print $1 }'",
+  ])
+
   node_cfg = { for name, h in var.hosts : name => <<-EOT
     # Written by Conn3x. Changes here are overwritten on the next apply.
     [zeek]
@@ -111,6 +120,17 @@ circuit "zeek" {
       url    = local.repo_url[each.key]
       key    = file("${path.module}/files/zeek-obs.asc")
       suites = ["/"]
+    }
+  }
+
+  # Moving to another zeek_series: stops Zeek and removes the old line.
+  # remove, not purge, so the config stays, and /opt/zeek/logs and
+  # /opt/zeek/spool aren't the packages' to remove. The steps below then
+  # install the new line, write the config again and restart Zeek.
+  step "old_series" {
+    command {
+      command = "old=$(${local.other_series}) && { systemctl stop zeek 2>/dev/null || true; } && DEBIAN_FRONTEND=noninteractive apt-get remove -y $old"
+      unless  = "[ -z \"$(${local.other_series})\" ]"
     }
   }
 

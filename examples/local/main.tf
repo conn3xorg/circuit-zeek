@@ -3,6 +3,13 @@ variable "port" {
   default = 2293
 }
 
+# CI sets zeek_series to install the previous release line first, then
+# upgrades to the circuit's own by applying again without it.
+variable "zeek_series" {
+  type    = string
+  default = null
+}
+
 module "zeek" {
   source = "../.."
 
@@ -10,6 +17,7 @@ module "zeek" {
   ssh_port             = var.port
   ssh_private_key_file = "./id_ed25519"
   ssh_known_hosts_file = "./known_hosts"
+  zeek_series          = var.zeek_series
 
   interface       = "eth0"
   networks        = ["10.88.0.0/16"]
