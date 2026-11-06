@@ -46,7 +46,8 @@ variable "ssh_become" {
 variable "zeek_series" {
   type        = string
   default     = "9.0"
-  description = "Zeek release line to install, such as \"9.0\". The host gets the newest release on that line. X.0 lines are Zeek's long-term support releases."
+  nullable    = false
+  description = "Zeek release line to install, such as \"9.0\". The host gets the newest release on that line. X.0 lines are Zeek's long-term support releases. Null means the default."
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+$", var.zeek_series))
