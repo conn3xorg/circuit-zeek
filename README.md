@@ -68,7 +68,7 @@ A sensor on a mirror port or tap sees the checksums that went over the wire, and
 On each host, in order:
 
 1. Adds Zeek's repository on the openSUSE Build Service, `download.opensuse.org/repositories/security:/zeek/`, for the host's release (`xUbuntu_24.04` or `Debian_13`), with its signing key from [files/zeek-obs.asc](files/zeek-obs.asc). That key expires on 2 December 2026; see [The signing key](#the-signing-key).
-2. Installs `zeekctl-9.0`, which pulls in `zeek-9.0-core`. Both live under `/opt/zeek`. The `zeek-9.0` package would add the compilers and headers for building plugins, which a sensor doesn't need.
+2. If another release line is installed, such as `zeekctl-8.0` and `zeek-8.0-core` after `zeek_series` was raised, stops Zeek and removes those packages. They're removed, not purged, and `/opt/zeek/logs` and `/opt/zeek/spool` stay. Then installs `zeekctl-9.0`, which pulls in `zeek-9.0-core`. Both live under `/opt/zeek`. The `zeek-9.0` package would add the compilers and headers for building plugins, which a sensor doesn't need.
 3. Writes `/opt/zeek/etc/node.cfg` with one standalone node on your interface, `/opt/zeek/etc/networks.cfg` from `networks`, and `/opt/zeek/etc/zeekctl.cfg` with the package's settings and your log retention. Then writes `/opt/zeek/share/zeek/site/conn3x.zeek`, which loads `policy/tuning/json-logs` and your `local_zeek` lines. zeekctl loads it after the package's own `local.zeek`, which stays as shipped.
 4. Runs `zeekctl check`, and only if it passes, `zeekctl install`, which copies the config and scripts to where the running Zeek reads them. A script error stops the apply with Zeek's own message, such as `error in /opt/zeek/share/zeek/site/conn3x.zeek, line 4: syntax error`, and the running Zeek carries on with the last config that passed. The next apply runs the check again.
 5. Installs a `zeek.service` unit that runs `zeekctl start` and `zeekctl stop`, starts it now and at boot, and restarts it after each install. The packages don't ship a unit of their own for zeekctl.
@@ -90,7 +90,7 @@ gpg --show-keys files/zeek-obs.asc
 
 `zeek_series` picks the release line, `9.0` by default. Zeek's X.0 lines are its long-term support releases; 9.0 came out in August 2026 and 9.0.1 is current. The host gets the newest release on the line and `apt upgrade` keeps it there, moving to 9.0.2 and so on but never to 9.1 or 10.0. The repository keeps only the newest release of each line, so there's no pinning an exact one.
 
-After an `apt upgrade` brings a new Zeek, `zeekctl status` says `new zeek version detected`. Run `zeekctl deploy` on the host to restart onto it. Changing `zeek_series` runs the check, install and restart for you.
+After an `apt upgrade` brings a new Zeek, `zeekctl status` says `new zeek version detected`. Run `zeekctl deploy` on the host to restart onto it. Changing `zeek_series` removes the old line's packages, installs the new one and runs the check, install and restart for you. The lines all install into `/opt/zeek`, so only one can be installed at a time.
 
 ### What it doesn't do
 
@@ -144,6 +144,8 @@ Requires Conn3x v0.6.9 or later and systemd on each host, with access to `downlo
 Ubuntu 24.04 and Debian 13. CI applies [examples/local](examples/local) to each on amd64, checks the second plan has no changes and that `zeek` and `zeek-cron.timer` are active, then makes a DNS lookup and an HTTP request from inside the container and checks `zeekctl status` shows Zeek running, the lookup is in `dns.log`, the request is in `http.log`, its connection is in `conn.log`, and all three are valid JSON. The container gets `NET_RAW` and no other added privilege.
 
 CI then restarts the container and checks `zeek` and `zeek-cron.timer` come back by themselves, the same DNS, HTTP and connection checks pass, and the plan has no changes.
+
+Last, on a fresh container, CI applies `zeek_series = "8.0"`, checks Zeek 8.0 is installed, then applies the default line over it, checks the plan has no changes and Zeek runs the new version, and runs the same DNS, HTTP and connection checks.
 
 By hand on the same containers on arm64: the same checks passed; a syntax error in `local_zeek` stopped the apply at `zeekctl check` while the running Zeek kept its process and its installed scripts; Zeek killed with `SIGKILL` came back on the next `zeek-cron.service` run and stayed up after the unit finished; and on Debian 13, after a container restart, Zeek came back and the plan had no changes. Without `ignore_checksums`, the container's own HTTP request didn't reach `http.log`.
 
