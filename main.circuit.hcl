@@ -123,13 +123,15 @@ circuit "zeek" {
     }
   }
 
-  # Moving to another zeek_series: stops Zeek and removes the old line.
-  # remove, not purge, so the config stays, and /opt/zeek/logs and
-  # /opt/zeek/spool aren't the packages' to remove. The steps below then
-  # install the new line, write the config again and restart Zeek.
+  # Moving to another zeek_series: downloads the new line first, so a
+  # mirror that fails leaves the old Zeek running, then stops Zeek and
+  # removes the old line. remove, not purge, so the config stays, and
+  # /opt/zeek/logs and /opt/zeek/spool aren't the packages' to remove. The
+  # steps below then install the new line, write the config again and
+  # restart Zeek.
   step "old_series" {
     command {
-      command = "old=$(${local.other_series}) && { systemctl stop zeek 2>/dev/null || true; } && DEBIAN_FRONTEND=noninteractive apt-get remove -y $old"
+      command = "old=$(${local.other_series}) && DEBIAN_FRONTEND=noninteractive apt-get install -y --download-only zeekctl-${var.zeek_series} && { systemctl stop zeek 2>/dev/null || true; } && DEBIAN_FRONTEND=noninteractive apt-get remove -y $old"
       unless  = "[ -z \"$(${local.other_series})\" ]"
     }
   }
