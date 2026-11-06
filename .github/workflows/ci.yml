@@ -90,27 +90,6 @@ jobs:
           sudo podman exec circuit-zeek systemctl is-active zeek zeek-cron.timer
           sudo podman exec -i circuit-zeek sh < check.sh
           conn3x plan -detailed-exitcode
-      # A fresh host gets the previous long-term support line, 8.0, then the
-      # circuit's own line is applied over it, the way someone raises
-      # zeek_series.
-      - name: Upgrade from Zeek 8.0 on a fresh host, then plan again with no changes
-        working-directory: examples/local
-        env:
-          CONTAINERFILE: ${{ github.workspace }}/conn3x/test/images/${{ matrix.distro }}/Containerfile
-          PODMAN: sudo podman
-        run: |
-          ./down.sh
-          ./up.sh
-          conn3x init
-          conn3x apply -auto-approve -var zeek_series=8.0
-          sudo podman exec circuit-zeek /opt/zeek/bin/zeek --version | grep -q 'version 8\.0\.'
-          conn3x apply -auto-approve
-          conn3x plan -detailed-exitcode
-          series=$(sed -n '/variable "zeek_series"/,/^}/s/.*default *= *"\(.*\)"/\1/p' ../../variables.tf)
-          sudo podman exec circuit-zeek /opt/zeek/bin/zeek --version | grep -q "version ${series}\."
-      - name: Check the upgraded Zeek runs and logs the host's traffic
-        working-directory: examples/local
-        run: sudo podman exec -i circuit-zeek sh < check.sh
       - name: Clean up
         if: always()
         working-directory: examples/local

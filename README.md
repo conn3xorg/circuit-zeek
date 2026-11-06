@@ -143,6 +143,8 @@ Requires Conn3x v0.6.9 or later and systemd on each host, with access to `downlo
 
 Ubuntu 24.04 and Debian 13. CI applies [examples/local](examples/local) to each on amd64, checks the second plan has no changes and that `zeek` and `zeek-cron.timer` are active, then makes a DNS lookup and an HTTP request from inside the container and checks `zeekctl status` shows Zeek running, the lookup is in `dns.log`, the request is in `http.log`, its connection is in `conn.log`, and all three are valid JSON. The container gets `NET_RAW` and no other added privilege.
 
+CI then restarts the container and checks `zeek` and `zeek-cron.timer` come back by themselves, the same DNS, HTTP and connection checks pass, and the plan has no changes.
+
 By hand on the same containers on arm64: the same checks passed; a syntax error in `local_zeek` stopped the apply at `zeekctl check` while the running Zeek kept its process and its installed scripts; Zeek killed with `SIGKILL` came back on the next `zeek-cron.service` run and stayed up after the unit finished; and on Debian 13, after a container restart, Zeek came back and the plan had no changes. Without `ignore_checksums`, the container's own HTTP request didn't reach `http.log`.
 
 On Ubuntu 24.04 and Debian 13 droplets (1 vCPU, 2 GB) with Zeek 9.0.1 on `eth0`, the same DNS, HTTP and connection checks passed, with `ignore_checksums` set and the DNS lookup sent to a public resolver, since the droplets' own resolver answers on the private interface. After a reboot, Zeek came back on both, the timer ran `zeekctl cron`, and the plan had no changes.
